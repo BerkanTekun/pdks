@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#eef2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+<title>Personel Giriş-Çıkış</title>
+<style>
+  :root {
+    --bg: #eef2f7;
+    --bg-glow: #dbe5f3;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --brand: #2563eb;
+    --brand-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --ok-ink: #166534;
+    --out: #ea580c;
+    --out-soft: #ffedd5;
+    --out-ink: #9a3412;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --warn-ink: #92400e;
+    --err: #dc2626;
+    --err-soft: #fee2e2;
+    --err-ink: #991b1b;
+    --key: #f1f5f9;
+    --key-press: #e2e8f0;
+    --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 12px 32px rgba(15, 23, 42, .08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1220;
+      --bg-glow: #132042;
+      --card: #121b2e;
+      --text: #e6ecf5;
+      --muted: #94a3b8;
+      --line: #22304a;
+      --brand: #3b82f6;
+      --brand-soft: rgba(59, 130, 246, .16);
+      --ok: #22c55e;
+      --ok-soft: rgba(34, 197, 94, .15);
+      --ok-ink: #bbf7d0;
+      --out: #fb923c;
+      --out-soft: rgba(251, 146, 60, .15);
+      --out-ink: #fed7aa;
+      --warn: #f59e0b;
+      --warn-soft: rgba(245, 158, 11, .15);
+      --warn-ink: #fde68a;
+      --err: #f87171;
+      --err-soft: rgba(248, 113, 113, .15);
+      --err-ink: #fecaca;
+      --key: #1a253d;
+      --key-press: #24334f;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .35);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    background-image: radial-gradient(900px 480px at 50% -160px, var(--bg-glow), transparent 70%);
+    background-repeat: no-repeat;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; touch-action: manipulation; }
+  [hidden] { display: none !important; }
+
+  .app {
+    min-height: 100vh;
+    min-height: 100dvh;
+    max-width: 440px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px calc(env(safe-area-inset-bottom, 0px) + 12px);
+  }
+
+  /* Üst bar */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .logo {
+    flex: none; width: 36px; height: 36px; border-radius: 11px;
+    background: var(--brand); color: #fff; display: grid; place-items: center;
+  }
+  .brand-name { font-weight: 700; font-size: 15px; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .clock { text-align: right; flex: none; }
+  .clock-time { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .clock-date { font-size: 12px; color: var(--muted); }
+
+  /* Sahne */
+  .stage { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px 0; }
+  .view { display: none; width: 100%; }
+  .view.is-active { display: block; animation: rise .28s ease-out; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .card {
+    background: var(--card);
+    border-radius: 28px;
+    box-shadow: var(--shadow);
+    padding: 30px 22px 26px;
+    text-align: center;
+  }
+  .title { font-size: 22px; font-weight: 800; letter-spacing: -.02em; margin-top: 16px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 14px; line-height: 1.5; }
+
+  /* Yükleniyor */
+  .spinner {
+    width: 54px; height: 54px; margin: 6px auto 0; border-radius: 50%;
+    border: 5px solid var(--line); border-top-color: var(--brand);
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #vLoading .muted { margin-top: 6px; }
+
+  /* İkon dairesi */
+  .ico {
+    width: 72px; height: 72px; margin: 0 auto; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--brand-soft); color: var(--brand);
+  }
+  .ico svg { width: 34px; height: 34px; }
+  .ico-lg { width: 124px; height: 124px; animation: pop .45s cubic-bezier(.2, 1.4, .4, 1); }
+  .ico-lg svg { width: 84px; height: 84px; }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .ico-lg .ring { fill: none; stroke: currentColor; stroke-width: 3; stroke-dasharray: 145; stroke-dashoffset: 145; animation: draw .5s ease-out .05s forwards; }
+  .ico-lg .mark { fill: none; stroke: currentColor; stroke-width: 4.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 48; stroke-dashoffset: 48; animation: draw .35s ease-out .45s forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  /* PIN */
+  .dots { display: flex; justify-content: center; gap: 18px; margin: 24px 0 10px; }
+  .dots i {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid var(--muted); opacity: .55;
+    transition: background-color .15s, border-color .15s, transform .15s, opacity .15s;
+  }
+  .dots i.on { background: var(--brand); border-color: var(--brand); opacity: 1; transform: scale(1.1); }
+  .dots.shake { animation: shake .42s; }
+  .dots.shake i { border-color: var(--err); }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-10px); } 40% { transform: translateX(9px); }
+    60% { transform: translateX(-6px); } 80% { transform: translateX(4px); }
+  }
+  .pin-msg { min-height: 22px; font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+  .pin-msg.err { color: var(--err); }
+  .pin-msg.info { color: var(--muted); }
+  .pad {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    max-width: 300px; margin: 0 auto;
+  }
+  .pad button {
+    height: 66px; border-radius: 20px;
+    background: var(--key);
+    font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums;
+    transition: background-color .1s, transform .08s;
+    -webkit-user-select: none; user-select: none;
+  }
+  .pad button:active { background: var(--key-press); transform: scale(.95); }
+  .pad button.ghost { background: transparent; font-size: 15px; font-weight: 600; color: var(--muted); }
+  .pad button.ghost:active { background: var(--key); }
+  .pad button:disabled { opacity: .45; }
+  .pad button:focus-visible, .btn:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+  .pad button svg { width: 26px; height: 26px; vertical-align: middle; }
+  .warn-note {
+    margin-top: 18px; padding: 10px 12px; border-radius: 12px;
+    background: var(--warn-soft); color: var(--warn-ink); font-size: 13px; line-height: 1.45;
+  }
+
+  /* Sonuç */
+  .greet { margin-top: 18px; font-size: 17px; font-weight: 600; color: var(--muted); }
+  .name { font-size: 27px; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; margin-top: 2px; word-break: break-word; }
+  .pill-row { margin-top: 12px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 16px; border-radius: 999px;
+    font-size: 14px; font-weight: 800; letter-spacing: .08em;
+  }
+  .big-time { margin-top: 12px; font-size: 58px; font-weight: 800; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .big-time small { font-size: 24px; font-weight: 700; color: var(--muted); letter-spacing: 0; }
+  #resDate { margin-top: 6px; }
+  .res-msg { margin-top: 14px; font-size: 15px; line-height: 1.5; }
+  .actions { margin-top: 22px; display: grid; gap: 10px; }
+  .btn {
+    display: block; width: 100%; height: 54px; border-radius: 16px;
+    background: var(--brand); color: #fff; font-size: 17px; font-weight: 700;
+  }
+  .btn:active { filter: brightness(.92); }
+  .btn.secondary { background: var(--key); color: var(--text); }
+
+  .k-in .ico-lg { background: var(--ok-soft); color: var(--ok); }
+  .k-in .pill { background: var(--ok-soft); color: var(--ok-ink); }
+  .k-out .ico-lg { background: var(--out-soft); color: var(--out); }
+  .k-out .pill { background: var(--out-soft); color: var(--out-ink); }
+  .k-dup .ico-lg { background: var(--warn-soft); color: var(--warn); }
+  .k-dup .pill { background: var(--warn-soft); color: var(--warn-ink); }
+  .k-err .ico-lg { background: var(--err-soft); color: var(--err); }
+  .k-err .name { font-size: 23px; }
+  .k-done .ico-lg { background: var(--brand-soft); color: var(--brand); }
+  .k-done .name { font-size: 23px; }
+  .closing { margin-top: 12px; font-variant-numeric: tabular-nums; }
+  .pk-btn { margin-top: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .pk-btn svg { width: 22px; height: 22px; flex: none; }
+  .btn:disabled { opacity: .55; }
+  .or-sep { margin-top: 14px; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+  .or-sep::before, .or-sep::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  #vPin .or-sep + .dots { margin-top: 16px; }
+  #vPin.has-pk > .ico { display: none; }  /* Passkey düğmesi varken ekran telefona sığsın */
+  #vPin.has-pk .title { margin-top: 0; }
+  .pk-btn { font-size: 16px; }
+  @media (max-height: 780px) {
+    #vPin.has-pk { padding-top: 22px; padding-bottom: 20px; }
+    #vPin.has-pk .pk-btn { margin-top: 14px; height: 50px; }
+    #vPin.has-pk .or-sep { margin-top: 10px; }
+    #vPin.has-pk .dots { margin: 12px 0 6px; }
+    #vPin.has-pk .pin-msg { margin-bottom: 10px; }
+    #vPin.has-pk .pad { gap: 10px; }
+    #vPin.has-pk .pad button { height: 56px; }
+  }
+
+  .foot { text-align: center; font-size: 12px; color: var(--muted); padding-top: 4px; }
+
+  @media (max-height: 640px) {
+    .card { padding: 22px 18px 20px; }
+    .dots { margin: 16px 0 8px; }
+    .pad button { height: 58px; }
+    .ico-lg { width: 104px; height: 104px; }
+    .big-time { font-size: 50px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-delay: 0s !important; transition-duration: .001ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM21 14v.01M14 21h.01M17.5 21H21v-3.5"/></svg>
+      </span>
+      <span class="brand-name" id="brandName">Personel Giriş-Çıkış</span>
+    </div>
+    <div class="clock" aria-hidden="true">
+      <div class="clock-time" id="clockTime">--:--</div>
+      <div class="clock-date" id="clockDate">&nbsp;</div>
+    </div>
+  </header>
+
+  <main class="stage">
+    <!-- 1) Yükleniyor -->
+    <section id="vLoading" class="view card is-active" aria-busy="true">
+      <div class="spinner" aria-hidden="true"></div>
+      <h1 class="title" id="loadTitle">Hazırlanıyor…</h1>
+      <p class="muted small" id="loadSub">Lütfen bekleyin</p>
+    </section>
+
+    <!-- 2) PIN tuş takımı (ilk kullanım) -->
+    <section id="vPin" class="view card" aria-labelledby="pinTitle">
+      <div class="ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2"/></svg>
+      </div>
+      <h1 class="title" id="pinTitle">PIN Kodunuzu Girin</h1>
+      <p class="muted small" id="pinHint">Cihazınızı adınıza eşleştirmek için 4 haneli kişisel PIN kodunuzu girin. Yalnızca ilk kullanımda veya tarayıcı verileri silindiğinde istenir.</p>
+      <button type="button" class="btn pk-btn" id="pkLoginBtn" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11v3a8 8 0 0 1-1.5 4.7"/><path d="M8.5 11a3.5 3.5 0 0 1 7 0v1.5"/><path d="M5.5 13.5V11a6.5 6.5 0 0 1 11.7-3.9"/><path d="M18.4 10.5c.1.5.1 1 .1 1.5v1a12 12 0 0 1-.6 3.8"/><path d="M15.4 15.5a10 10 0 0 1-1.4 4"/><path d="M8.2 16.6A9 9 0 0 1 8.5 14"/></svg>
+        Parmak izi / Yüz ile devam et
+      </button>
+      <p class="or-sep" id="pkOr" hidden>veya PIN kodunuzu girin</p>
+      <div class="dots" id="dots" role="img" aria-label="0 / 4 hane girildi"><i></i><i></i><i></i><i></i></div>
+      <p class="pin-msg" id="pinMsg" role="status" aria-live="polite"></p>
+      <div class="pad" id="pad">
+        <button type="button" data-k="1">1</button>
+        <button type="button" data-k="2">2</button>
+        <button type="button" data-k="3">3</button>
+        <button type="button" data-k="4">4</button>
+        <button type="button" data-k="5">5</button>
+        <button type="button" data-k="6">6</button>
+        <button type="button" data-k="7">7</button>
+        <button type="button" data-k="8">8</button>
+        <button type="button" data-k="9">9</button>
+        <button type="button" data-k="clear" class="ghost" aria-label="Temizle">Temizle</button>
+        <button type="button" data-k="0">0</button>
+        <button type="button" data-k="back" class="ghost" aria-label="Son haneyi sil">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h11a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/></svg>
+        </button>
+      </div>
+      <p class="warn-note" id="storageWarn" hidden>Tarayıcınız bu sayfanın veri saklamasını engelliyor (Gizli/Private sekme açık olabilir). Normal sekmede açmazsanız her okutmada PIN istenir.</p>
+    </section>
+
+    <!-- 3) Sonuç / hata -->
+    <section id="vResult" class="view card" aria-live="assertive">
+      <div class="ico ico-lg" id="resIcon" aria-hidden="true"></div>
+      <p class="greet" id="resGreet"></p>
+      <h1 class="name" id="resName"></h1>
+      <div class="pill-row" id="resPillRow"><span class="pill" id="resDir"></span></div>
+      <div class="big-time" id="resTime"></div>
+      <p class="muted small" id="resDate"></p>
+      <p class="res-msg" id="resMsg"></p>
+      <div class="actions" id="resActions"></div>
+      <p class="closing muted small" id="resClose" hidden></p>
+    </section>
+  </main>
+
+  <footer class="foot" id="foot"></footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =====================================================================
+   *  YAPILANDIRMA
+   *  API_URL yalnızca bu dosyayı Apps Script DIŞINDA (GitHub Pages vb.)
+   *  barındırdığınızda kullanılır. Apps Script içinde otomatik olarak
+   *  google.script.run kullanılır ve bu değer yok sayılır.
+   * ===================================================================== */
+  var CONFIG = {
+    API_URL: 'https://script.google.com/macros/s/BURAYA_DAGITIM_KIMLIGI/exec',
+    FIRMA_ADI: 'Personel Giriş-Çıkış',
+    SELAM_GIRIS: 'Hoş Geldiniz',
+    SELAM_CIKIS: 'İyi Günler',      // Çıkışta da "Hoş Geldiniz" isterseniz burayı değiştirin
+    ZAMAN_ASIMI_MS: 25000,
+    OTOMATIK_TEKRAR: 2,             // Ağ hatasında sessiz tekrar sayısı
+    OTOMATIK_KAPANMA_SN: 6          // Kayıttan kaç saniye sonra sayfa kapansın / kilitlensin (0 = kapalı)
+  };
+  var VERSION = '1.2';
+  var KEY = { token: 'pdks_device_token', pid: 'pdks_personel_id', name: 'pdks_ad_soyad', iid: 'pdks_install_id', last: 'pdks_last_record', pkSnooze: 'pdks_pk_snooze' };
+  var YON_GIRIS = 'GİRİŞ';
+
+  var IS_GAS = !!(window.google && window.google.script && window.google.script.run);
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { qrKey: '', pin: '', busy: false, resultAt: 0, padLockTimer: null, closeTimer: null, fpPromise: null, pkSupported: false };
+
+  /* ---------- Güvenli localStorage (Gizli sekmede hafızaya düşer) ---------- */
+  var store = (function () {
+    var ok = false, mem = {};
+    try {
+      var t = '__pdks_test__';
+      window.localStorage.setItem(t, '1');
+      window.localStorage.removeItem(t);
+      ok = true;
+    } catch (e) { ok = false; }
+    return {
+      ok: ok,
+      get: function (k) {
+        if (ok) { try { return window.localStorage.getItem(k); } catch (e) {} }
+        return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null;
+      },
+      set: function (k, v) {
+        if (ok) { try { window.localStorage.setItem(k, v); return; } catch (e) {} }
+        mem[k] = v;
+      },
+      del: function (k) {
+        if (ok) { try { window.localStorage.removeItem(k); } catch (e) {} }
+        delete mem[k];
+      }
+    };
+  })();
+
+  /* ---------- UUID v4 ---------- */
+  function uuidv4() {
+    var c = window.crypto || window.msCrypto;
+    if (c && typeof c.randomUUID === 'function') {
+      try { return c.randomUUID(); } catch (e) {}
+    }
+    var b = new Uint8Array(16);
+    if (c && c.getRandomValues) c.getRandomValues(b);
+    else for (var i = 0; i < 16; i++) b[i] = Math.floor(Math.random() * 256);
+    b[6] = (b[6] & 0x0f) | 0x40;
+    b[8] = (b[8] & 0x3f) | 0x80;
+    var h = '';
+    for (var j = 0; j < 16; j++) h += (b[j] + 0x100).toString(16).slice(1);
+    return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+  }
+
+  /* ---------- Yardımcılar ---------- */
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function vibrate(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  function firstName(n) { return String(n || '').trim().split(/\s+/)[0] || ''; }
+
+  /* ---------- Görünümler ---------- */
+  function showView(id) {
+    ['vLoading', 'vPin', 'vResult'].forEach(function (v) {
+      $(v).classList.toggle('is-active', v === id);
+    });
+  }
+
+  function showLoading(title, sub) {
+    $('loadTitle').textContent = title || 'Kaydınız alınıyor…';
+    $('loadSub').textContent = sub || 'Lütfen bekleyin';
+    showView('vLoading');
+  }
+
+  var ICONS = {
+    ok: '<svg viewBox="0 0 52 52"><circle class="ring" cx="26" cy="26" r="23"/><path class="mark" d="M15.5 27l7 7 14-15"/></svg>',
+    dup: '<svg viewBox="0 0 52 52"><circle class="ring" cx="26" cy="26" r="23"/><path class="mark" d="M26 14.5V27l7.5 5"/></svg>',
+    err: '<svg viewBox="0 0 52 52"><circle class="ring" cx="26" cy="26" r="23"/><path class="mark" d="M18.5 18.5l15 15M33.5 18.5l-15 15"/></svg>'
+  };
+
+  /**
+   * opt: { kind: 'in'|'out'|'dup'|'err', icon, greet, name, pill, time, date, msg, actions:[{label, fn, secondary}] }
+   */
+  function showCard(opt) {
+    var card = $('vResult');
+    card.className = 'view card k-' + opt.kind;
+    clearInterval(state.closeTimer);
+    $('resClose').hidden = true;
+    $('resIcon').innerHTML = ICONS[opt.icon] || ICONS.ok;
+    setText('resGreet', opt.greet);
+    setText('resName', opt.name);
+    setText('resDir', opt.pill);
+    $('resPillRow').hidden = !opt.pill;
+    var te = $('resTime');
+    if (opt.time) {
+      var parts = String(opt.time).split(':');
+      te.innerHTML = esc(parts[0] + ':' + parts[1]) + (parts[2] ? '<small>:' + esc(parts[2]) + '</small>' : '');
+      te.hidden = false;
+    } else {
+      te.innerHTML = '';
+      te.hidden = true;
+    }
+    setText('resDate', opt.date);
+    setText('resMsg', opt.msg);
+    setActions(opt.actions);
+
+    state.resultAt = Date.now();
+    showView('vResult');
+    renderFooter();
+  }
+
+  function setActions(actions) {
+    var box = $('resActions');
+    box.innerHTML = '';
+    (actions || []).forEach(function (a) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn' + (a.secondary ? ' secondary' : '');
+      b.textContent = a.label;
+      b.addEventListener('click', a.fn);
+      box.appendChild(b);
+    });
+    box.hidden = !box.children.length;
+  }
+
+  function setText(id, txt) {
+    var el = $(id);
+    el.textContent = txt || '';
+    el.hidden = !txt;
+  }
+
+  function renderFooter() {
+    var t = store.get(KEY.token);
+    $('foot').textContent = 'v' + VERSION + ' · ' + (t ? 'Cihaz ' + t.slice(0, 8) : 'Eşleşmemiş cihaz');
+  }
+
+  /* ---------- Saat ---------- */
+  function tick() {
+    var d = new Date();
+    $('clockTime').textContent = pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    var ds;
+    try { ds = d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' }); }
+    catch (e) { ds = pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.' + d.getFullYear(); }
+    $('clockDate').textContent = ds;
+  }
+
+  /* ---------- Açılış parametreleri ve yenileme (F5) koruması ---------- */
+  function getLaunchParams(cb) {
+    if (IS_GAS && window.google.script.url && window.google.script.url.getLocation) {
+      var done = false;
+      var deliver = function (p) { if (!done) { done = true; cb(p || {}); } };
+      var timer = setTimeout(function () { deliver({}); }, 1500);
+      try {
+        window.google.script.url.getLocation(function (loc) {
+          clearTimeout(timer);
+          deliver(loc && loc.parameter);
+        });
+      } catch (e) { clearTimeout(timer); deliver({}); }
+    } else {
+      var p = {};
+      try { new URLSearchParams(window.location.search).forEach(function (v, k) { p[k] = v; }); } catch (e) {}
+      cb(p);
+    }
+  }
+
+  /** Sayfa F5 / yenile / geri-ileri ile mi açıldı? (QR okutması her zaman yeni bir gezinmedir.) */
+  function isReloadNav() {
+    if (IS_GAS) return false; // Apps Script'te koruma ?bitti=1 adresiyle sunucuda (doGet) yapılır
+    try {
+      var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+      if (nav && nav.type) return nav.type === 'reload' || nav.type === 'back_forward';
+      if (performance.navigation) return performance.navigation.type === 1 || performance.navigation.type === 2;
+    } catch (e) {}
+    return false;
+  }
+
+  /** Adres çubuğunu ?bitti=1 yapar: bundan sonra F5, sekme geri yükleme vb. yeni kayıt OLUŞTURMAZ. */
+  function markUsed() {
+    try {
+      if (IS_GAS) {
+        if (window.google.script.history && window.google.script.history.replace) {
+          window.google.script.history.replace(null, { bitti: '1' }, '');
+        }
+      } else if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname + '?bitti=1');
+      }
+    } catch (e) {}
+  }
+
+  function scheduleAutoClose(seconds) {
+    var left = seconds == null ? CONFIG.OTOMATIK_KAPANMA_SN : seconds;
+    if (!left) return;
+    var note = $('resClose');
+    var paint = function () { note.textContent = 'Sayfa ' + left + ' sn içinde kapanacak'; };
+    note.hidden = false;
+    paint();
+    clearInterval(state.closeTimer);
+    state.closeTimer = setInterval(function () {
+      left--;
+      if (left > 0) { paint(); return; }
+      closeOrLock();
+    }, 1000);
+  }
+
+  /** Sekmeyi kapatmayı dener (Android Chrome'da QR'dan açılan sekme kapanır); izin yoksa kilit ekranı. */
+  function closeOrLock() {
+    clearInterval(state.closeTimer);
+    try { window.close(); } catch (e) {}
+    try { if (window.top && window.top !== window) window.top.close(); } catch (e) {}
+    setTimeout(function () { showUsed(); }, 350);
+  }
+
+  function showUsed(reason) {
+    var last = store.get(KEY.last);
+    showCard({
+      kind: 'done', icon: 'ok', greet: '', name: 'İşlem Tamamlandı', pill: '', time: '', date: '',
+      msg: (reason ? reason + ' ' : '') + (last ? 'Son kaydınız: ' + last + '. ' : '') +
+        'Yeni giriş veya çıkış için iş yerindeki QR kodu tekrar okutun. Bu sayfayı kapatabilirsiniz.',
+      actions: []
+    });
+  }
+
+  /* ---------- Cihaz parmak izi (tarayıcı verisi silinse de değişmeyen özellikler) ---------- */
+  function collectFingerprint() {
+    var nav = window.navigator, ua = nav.userAgent || '';
+    var isIOS = /iPhone|iPad|iPod/.test(ua) || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1);
+    var c = { os: parseOs(ua, isIOS), model: '', arch: '' };
+    var hints = (nav.userAgentData && nav.userAgentData.getHighEntropyValues)
+      ? nav.userAgentData.getHighEntropyValues(['model', 'platform', 'platformVersion', 'architecture', 'bitness'])
+          .then(null, function () { return null; })
+      : Promise.resolve(null);
+    return hints.then(function (h) {
+      if (h) {
+        if (h.platform) c.os = h.platform + ' ' + String(h.platformVersion || '').split('.')[0];
+        c.model = h.model || '';
+        c.arch = (h.architecture || '') + (h.bitness || '');
+      }
+      if (!c.model) {
+        if (isIOS) c.model = (/iPad/.test(ua) || nav.platform === 'MacIntel') ? 'iPad' : 'iPhone';
+        else {
+          var m = ua.match(/Android[^;)]*;\s*([^;)]+?)(?:\s+Build\/[^;)]*)?\)/);
+          if (m && m[1] !== 'K' && !/^wv$/.test(m[1])) c.model = m[1];
+        }
+      }
+      var sc = window.screen || {}, w = sc.width || 0, hh = sc.height || 0;
+      var dpr = Math.round((window.devicePixelRatio || 1) * 100) / 100;
+      // iOS'ta yalnızca kısa kenar: Safari'nin gizlilik korumaları uzun kenarı değişken bildirebilir
+      c.scr = isIOS ? (Math.min(w, hh) + '@' + dpr) : (Math.min(w, hh) + 'x' + Math.max(w, hh) + '@' + dpr);
+      c.depth = sc.colorDepth || 0;
+      c.cpu = nav.hardwareConcurrency || 0;
+      c.mem = nav.deviceMemory || 0;
+      c.touch = nav.maxTouchPoints || 0;
+      var g = webglInfo();
+      c.glv = g.vendor;
+      c.gpu = g.renderer;
+      c.glp = g.params;
+      try { c.tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { c.tz = ''; }
+      c.lang = String((nav.languages && nav.languages[0]) || nav.language || '').toLowerCase();
+      var keys = ['os', 'model', 'arch', 'scr', 'depth', 'cpu', 'mem', 'touch', 'glv', 'gpu', 'glp', 'tz', 'lang'];
+      var canon = keys.map(function (k) { return k + '=' + c[k]; }).join('|');
+      return sha256Hex('pdks-fp-v1|' + canon).then(function (hex) {
+        return { fp: hex, info: fpSummary(c) };
+      });
+    });
+  }
+
+  function parseOs(ua, isIOS) {
+    var m;
+    if (isIOS) { m = ua.match(/OS (\d+)[_.]/); return 'iOS ' + (m ? m[1] : ''); }
+    if ((m = ua.match(/Android (\d+)/))) return 'Android ' + m[1];
+    if (/Windows/.test(ua)) return 'Windows';
+    if (/Mac OS X/.test(ua)) return 'macOS';
+    if (/Linux/.test(ua)) return 'Linux';
+    return 'Diger';
+  }
+
+  function webglInfo() {
+    var out = { vendor: '', renderer: '', params: '' };
+    try {
+      var cv = document.createElement('canvas');
+      var gl = cv.getContext('webgl') || cv.getContext('experimental-webgl');
+      if (!gl) return out;
+      var ext = gl.getExtension('WEBGL_debug_renderer_info');
+      out.vendor = String((ext && gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)) || gl.getParameter(gl.VENDOR) || '');
+      out.renderer = String((ext && gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) || gl.getParameter(gl.RENDERER) || '');
+      var vp = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
+      out.params = [gl.MAX_TEXTURE_SIZE, gl.MAX_RENDERBUFFER_SIZE, gl.MAX_VERTEX_UNIFORM_VECTORS,
+        gl.MAX_FRAGMENT_UNIFORM_VECTORS, gl.MAX_VARYING_VECTORS, gl.MAX_TEXTURE_IMAGE_UNITS]
+        .map(function (p) { return gl.getParameter(p); }).join(',') + ',' + (vp ? vp[0] + 'x' + vp[1] : '');
+      var lose = gl.getExtension('WEBGL_lose_context');
+      if (lose) lose.loseContext();
+    } catch (e) {}
+    return out;
+  }
+
+  function fpSummary(c) {
+    var gpu = String(c.gpu || '').replace(/^ANGLE \(|\)$/g, '')
+      .replace(/\s*\(0x[0-9a-f]+\)/gi, '')
+      .replace(/,?\s+(Direct3D|D3D\d|OpenGL|Vulkan|Metal).*$/i, '')
+      .replace(/\s+/g, ' ').trim().slice(0, 48);
+    return [c.os, c.model, c.scr.replace('x', '×'), c.cpu ? c.cpu + ' çekirdek' : '', c.mem ? c.mem + ' GB' : '', gpu]
+      .filter(function (x) { return x && String(x).trim(); }).join(' · ').slice(0, 160);
+  }
+
+  function sha256Hex(str) {
+    try {
+      if (window.crypto && window.crypto.subtle && window.TextEncoder) {
+        return window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
+          var b = new Uint8Array(buf), h = '';
+          for (var i = 0; i < b.length; i++) h += (b[i] + 0x100).toString(16).slice(1);
+          return h;
+        }, function () { return fallbackHash(str); });
+      }
+    } catch (e) {}
+    return Promise.resolve(fallbackHash(str));
+  }
+
+  function fallbackHash(str) { // Yalnızca crypto.subtle yoksa: 8 × FNV-1a (32 bit) → 64 hex
+    var out = '';
+    for (var s = 0; s < 8; s++) {
+      var h = (0x811c9dc5 ^ Math.imul(s + 1, 0x9e3779b1)) >>> 0;
+      for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+      out += ('0000000' + h.toString(16)).slice(-8);
+    }
+    return out;
+  }
+
+  /* ---------- Passkey (parmak izi / yüz tanıma) – yalnızca birinci taraf barındırmada ---------- */
+  function detectPasskey() {
+    try {
+      if (IS_GAS || !window.isSecureContext || !window.PublicKeyCredential || !navigator.credentials ||
+          typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable !== 'function') {
+        return Promise.resolve(false);
+      }
+      return window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+        .then(function (v) { return !!v; }, function () { return false; });
+    } catch (e) { return Promise.resolve(false); }
+  }
+
+  function refreshPkButton() {
+    $('pkLoginBtn').hidden = !state.pkSupported;
+    $('pkOr').hidden = !state.pkSupported;
+    $('vPin').classList.toggle('has-pk', state.pkSupported);
+  }
+
+  function randBytes(n) {
+    var b = new Uint8Array(n);
+    window.crypto.getRandomValues(b);
+    return b;
+  }
+
+  function b64url(bytes) {
+    var s = '';
+    for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  /** Veri silinmiş cihaz: passkey → telefon kilidi onayı → kurtarma anahtarı → PIN'siz yeniden eşleşme. */
+  function passkeyLogin() {
+    if (state.busy || !state.pkSupported) return;
+    state.busy = true;
+    setPadDisabled(true);
+    setPinMsg('Telefonunuzun parmak izi / yüz tanıma onayı bekleniyor…', 'info');
+    var stage = 'device', p;
+    try {
+      // Doğrudan dokunma olayında çağrılır (Safari kullanıcı etkileşimi şartı)
+      p = navigator.credentials.get({ publicKey: { challenge: randBytes(32), userVerification: 'required', timeout: 60000 } });
+    } catch (e) { p = Promise.reject(e); }
+    p.then(function (cred) {
+      var uh = cred && cred.response && cred.response.userHandle;
+      if (!uh || !uh.byteLength) throw new Error('nohandle');
+      var secret = b64url(new Uint8Array(uh));
+      stage = 'server';
+      setPinMsg('Doğrulanıyor…', 'info');
+      return fpWithTimeout(3000).then(function (f) {
+        return callWithRetry(basePayload({
+          mode: 'pk_login', secret: secret, newToken: uuidv4(),
+          oldToken: store.get(KEY.token) || '', fp: f ? f.fp : '', fpInfo: f ? f.info : ''
+        }));
+      });
+    }).then(function (res) {
+      if (res && res.ok) {
+        state.busy = false;
+        remember(res);
+        requestPersistence();
+        showSuccess(res, 'passkey');
+        return;
+      }
+      if (res && res.code === 'PK_UNKNOWN') { pinNotice(res.message); return; }
+      handleFailure(res || {}, 'pin');
+    }).catch(function (err) {
+      if (err && err.message === 'config') { showTransportError(err, showPin); return; }
+      if (stage === 'server') {
+        pinNotice(navigator.onLine === false ? 'İnternet bağlantısı yok. Tekrar deneyin.' : 'Bağlantı hatası. Lütfen tekrar deneyin.');
+        return;
+      }
+      pinNotice(err && err.name === 'NotAllowedError'
+        ? 'Doğrulama iptal edildi veya bu telefonda kayıtlı parmak izi / yüz yok. PIN kodunuzu girin.'
+        : 'Parmak izi / yüz tanıma kullanılamadı. PIN kodunuzu girin.');
+    });
+  }
+
+  /** Eşleşmiş cihazda passkey oluşturur; kurtarma anahtarını (userHandle) sunucuya özet olarak kaydettirir. */
+  function passkeyRegister(res) {
+    clearInterval(state.closeTimer);
+    $('resClose').hidden = true;
+    var btns = $('resActions').querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) btns[i].disabled = true;
+
+    var secret = randBytes(32);
+    var stage = 'device', p;
+    try {
+      p = navigator.credentials.create({ publicKey: {
+        challenge: randBytes(32),
+        rp: { name: CONFIG.FIRMA_ADI },
+        user: {
+          id: secret,
+          name: (res.adSoyad || 'Personel') + ' (' + res.personelId + ')',
+          displayName: res.adSoyad || String(res.personelId)
+        },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform', residentKey: 'required', requireResidentKey: true, userVerification: 'required'
+        },
+        attestation: 'none',
+        timeout: 60000
+      } });
+    } catch (e) { p = Promise.reject(e); }
+    setText('resMsg', 'Telefonunuzun parmak izi / yüz tanıma onayını bekliyoruz…');
+
+    p.then(function (cred) {
+      if (!cred) throw new Error('nocred');
+      stage = 'server';
+      setText('resMsg', 'Kaydediliyor…');
+      return callWithRetry(basePayload({ mode: 'pk_register', token: store.get(KEY.token) || '', secret: b64url(secret) }));
+    }).then(function (r) {
+      if (r && r.ok) {
+        vibrate([30, 30, 90]);
+        setText('resMsg', '✓ Parmak izi / yüz tanıma kaydedildi. Tarayıcı verileriniz silinse bile PIN yazmanız gerekmeyecek.');
+      } else {
+        setText('resMsg', (r && r.message) || 'Kaydedilemedi. Bir sonraki okutmada tekrar deneyebilirsiniz.');
+      }
+      setActions([{ label: 'Tamam', fn: finish }]);
+      scheduleAutoClose();
+    }).catch(function (err) {
+      var name = err && err.name;
+      setText('resMsg', stage === 'server'
+        ? 'Sunucuya ulaşılamadı; kayıt tamamlanamadı. Bir sonraki okutmada tekrar sorulacak.'
+        : name === 'NotAllowedError'
+          ? 'Kayıt iptal edildi. Bir sonraki okutmada tekrar sorulacak.'
+          : 'Bu telefon veya tarayıcı parmak izi / yüz kaydını desteklemiyor. PIN ile devam edebilirsiniz.');
+      setActions([{ label: 'Tamam', fn: finish }]);
+      scheduleAutoClose();
+    });
+  }
+
+  function shouldOfferPasskey(res, method) {
+    if (!state.pkSupported || !store.get(KEY.token) || method === 'passkey') return false;
+    if (method === 'pin') return true; // PIN ile eşleşme = ilk kullanım veya veriler silinmiş
+    if (res.passkey) return false;
+    var snoozed = +(store.get(KEY.pkSnooze) || 0);
+    return !snoozed || Date.now() - snoozed > 7 * 864e5;
+  }
+
+  /** Parmak izini en fazla ms kadar bekler; hazır değilse null (kayıt gecikmesin). */
+  function fpWithTimeout(ms) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var end = function (v) { if (!done) { done = true; resolve(v || null); } };
+      setTimeout(function () { end(null); }, ms);
+      (state.fpPromise || Promise.resolve(null)).then(end, function () { end(null); });
+    });
+  }
+
+  /* ---------- Sunucu iletişimi ---------- */
+
+  function callServer(payload) {
+    return new Promise(function (resolve, reject) {
+      var settled = false;
+      var timer = setTimeout(function () { fail(new Error('timeout')); }, CONFIG.ZAMAN_ASIMI_MS);
+      function ok(r) { if (!settled) { settled = true; clearTimeout(timer); resolve(r); } }
+      function fail(e) { if (!settled) { settled = true; clearTimeout(timer); reject(e); } }
+
+      if (IS_GAS) {
+        window.google.script.run.withSuccessHandler(ok).withFailureHandler(fail).processAttendance(payload);
+        return;
+      }
+      if (!/^https:\/\//.test(CONFIG.API_URL) || CONFIG.API_URL.indexOf('BURAYA_') > -1) {
+        fail(new Error('config'));
+        return;
+      }
+      // text/plain gövde → CORS ön kontrolü (preflight) gerekmez
+      fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify(payload), redirect: 'follow', cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(ok, fail);
+    });
+  }
+
+  function callWithRetry(payload, attempt) {
+    attempt = attempt || 0;
+    return callServer(payload).then(function (res) {
+      if (res && res.ok === false && res.retry && attempt < CONFIG.OTOMATIK_TEKRAR) {
+        return delay(900 * (attempt + 1)).then(function () { return callWithRetry(payload, attempt + 1); });
+      }
+      return res;
+    }, function (err) {
+      if (err && err.message === 'config') throw err;
+      if (attempt < CONFIG.OTOMATIK_TEKRAR) {
+        return delay(900 * (attempt + 1)).then(function () { return callWithRetry(payload, attempt + 1); });
+      }
+      throw err;
+    });
+  }
+
+  function basePayload(extra) {
+    var p = { v: 1, k: state.qrKey, iid: store.get(KEY.iid) || '', ownerId: store.get(KEY.pid) || '' };
+    for (var key in extra) if (Object.prototype.hasOwnProperty.call(extra, key)) p[key] = extra[key];
+    return p;
+  }
+
+  function remember(res) {
+    if (res.token) store.set(KEY.token, res.token);
+    if (res.personelId) store.set(KEY.pid, String(res.personelId));
+    if (res.adSoyad) store.set(KEY.name, res.adSoyad);
+  }
+
+  function requestPersistence() {
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  }
+
+  /* ---------- Akış 1: Kayıtlı cihaz → otomatik kayıt ---------- */
+  function autoRecord() {
+    var token = store.get(KEY.token);
+    if (!token) { showPin(); return; }
+    var nm = store.get(KEY.name);
+    showLoading(nm ? 'Merhaba ' + firstName(nm) + ',' : 'Kaydınız alınıyor…', nm ? 'kaydınız alınıyor…' : 'Cihazınız doğrulanıyor');
+
+    fpWithTimeout(400).then(function (f) {
+      return callWithRetry(basePayload({ mode: 'auto', token: token, fp: f ? f.fp : '', fpInfo: f ? f.info : '' }));
+    }).then(function (res) {
+      if (res && res.ok) { remember(res); showSuccess(res, 'auto'); return; }
+      handleFailure(res || {}, 'auto');
+    }).catch(function (err) { showTransportError(err, autoRecord); });
+  }
+
+  /* ---------- Akış 2: PIN ile eşleştirme ---------- */
+  function showPin(notice) {
+    state.pin = '';
+    state.busy = false;
+    renderDots();
+    setPinMsg(notice || '', notice ? 'err' : '');
+    setPadDisabled(false);
+    $('storageWarn').hidden = store.ok;
+    refreshPkButton();
+    showView('vPin');
+    renderFooter();
+  }
+
+  function renderDots() {
+    var dots = $('dots').children;
+    for (var i = 0; i < dots.length; i++) dots[i].classList.toggle('on', i < state.pin.length);
+    $('dots').setAttribute('aria-label', state.pin.length + ' / 4 hane girildi');
+  }
+
+  function setPinMsg(txt, cls) {
+    var el = $('pinMsg');
+    el.textContent = txt || '';
+    el.className = 'pin-msg' + (cls ? ' ' + cls : '');
+  }
+
+  function setPadDisabled(dis) {
+    var bs = $('pad').querySelectorAll('button');
+    for (var i = 0; i < bs.length; i++) bs[i].disabled = dis;
+    $('pkLoginBtn').disabled = dis;
+  }
+
+  /** Sallamadan, sakin bir uyarı (ör. passkey iptal edildi) gösterip PIN girişine döner. */
+  function pinNotice(msg) {
+    state.pin = '';
+    state.busy = false;
+    renderDots();
+    setPinMsg(msg, 'err');
+    setPadDisabled(false);
+  }
+
+  function press(k) {
+    if (state.busy || !$('vPin').classList.contains('is-active')) return;
+    if (k === 'back') state.pin = state.pin.slice(0, -1);
+    else if (k === 'clear') state.pin = '';
+    else if (/^\d$/.test(k) && state.pin.length < 4) { state.pin += k; vibrate(8); }
+    if (state.pin.length && $('pinMsg').classList.contains('err')) setPinMsg('', '');
+    renderDots();
+    if (state.pin.length === 4) {
+      state.busy = true;
+      setTimeout(submitPin, 140);
+    }
+  }
+
+  function pinError(msg, lockSeconds) {
+    var d = $('dots');
+    d.classList.remove('shake');
+    void d.offsetWidth; // animasyonu yeniden başlat
+    d.classList.add('shake');
+    vibrate([60, 40, 60]);
+    state.pin = '';
+    state.busy = false;
+    renderDots();
+    setPinMsg(msg, 'err');
+    if (lockSeconds) {
+      setPadDisabled(true);
+      clearTimeout(state.padLockTimer);
+      state.padLockTimer = setTimeout(function () { setPadDisabled(false); }, lockSeconds * 1000);
+    } else {
+      setPadDisabled(false);
+    }
+  }
+
+  function submitPin() {
+    setPadDisabled(true);
+    setPinMsg('Doğrulanıyor…', 'info');
+    var pin = state.pin;
+    fpWithTimeout(3000).then(function (f) {
+      return callWithRetry(basePayload({
+        mode: 'pin',
+        pin: pin,
+        newToken: uuidv4(),                     // Benzersiz cihaz anahtarı (UUID v4)
+        oldToken: store.get(KEY.token) || '',
+        fp: f ? f.fp : '',                      // Cihaz parmak izi (silinmeye karşı suistimal engeli)
+        fpInfo: f ? f.info : ''
+      }));
+    }).then(function (res) {
+      if (res && res.ok) {
+        remember(res);                         // token → localStorage (mühür)
+        requestPersistence();
+        showSuccess(res, 'pin');
+        return;
+      }
+      handleFailure(res || {}, 'pin');
+    }).catch(function (err) {
+      if (err && err.message === 'config') { showTransportError(err, showPin); return; }
+      pinError(navigator.onLine === false ? 'İnternet bağlantısı yok. Tekrar deneyin.' : 'Bağlantı hatası. Lütfen tekrar deneyin.');
+    });
+  }
+
+  /* ---------- Sonuç ekranları ---------- */
+  function showSuccess(res, method) {
+    var isDup = res.status === 'DUPLICATE';
+    var isIn = res.yon === YON_GIRIS;
+    var paired = res.pairing === 'ILK' || res.pairing === 'YENILEME';
+    var msg;
+    if (isDup) {
+      msg = res.message + (res.tekrarDakika ? ' Yeni okutma için yaklaşık ' + res.tekrarDakika + ' dk bekleyin.' : '');
+    } else if (paired && method === 'passkey') {
+      msg = 'Parmak izi / yüz tanıma ile doğrulandınız; cihaz yeniden adınıza mühürlendi.';
+    } else if (paired) {
+      msg = 'Bu cihaz adınıza mühürlendi. Bundan sonra QR kodu okutmanız yeterli; PIN sorulmayacak.';
+    } else {
+      msg = isIn ? 'Giriş kaydınız alındı. İyi çalışmalar!' : 'Çıkış kaydınız alındı. İyi dinlenmeler!';
+    }
+    var offer = shouldOfferPasskey(res, method);
+    var actions = [{ label: 'Tamam', fn: finish }];
+    if (offer) {
+      msg += ' Tarayıcı verileriniz silinse bile PIN yazmadan devam etmek için parmak izinizi / yüzünüzü kaydedin.';
+      actions = [
+        { label: 'Parmak izimi / yüzümü kaydet', fn: function () { passkeyRegister(res); } },
+        { label: 'Şimdi değil', secondary: true, fn: function () { store.set(KEY.pkSnooze, String(Date.now())); finish(); } }
+      ];
+    }
+    vibrate(isDup ? [40, 60, 40] : [30, 30, 90]);
+    showCard({
+      kind: isDup ? 'dup' : (isIn ? 'in' : 'out'),
+      icon: isDup ? 'dup' : 'ok',
+      greet: isDup ? 'Kaydınız zaten alındı' : (isIn ? CONFIG.SELAM_GIRIS : CONFIG.SELAM_CIKIS),
+      name: res.adSoyad,
+      pill: res.yon,
+      time: res.saat,
+      date: res.tarih,
+      msg: msg,
+      actions: actions
+    });
+    store.set(KEY.last, (res.yon || '') + ' · ' + (res.saatKisa || '') + ' · ' + (res.tarih || ''));
+    markUsed(); // F5 artık yeni kayıt oluşturmaz
+    // Birkaç saniye sonra sekmeyi kapat / kilitle (kayıt teklifi varken okumak için daha uzun süre)
+    var sec = CONFIG.OTOMATIK_KAPANMA_SN;
+    scheduleAutoClose(offer && sec ? Math.max(20, sec) : sec);
+  }
+
+  function showError(title, msg, actions) {
+    vibrate([80, 50, 80]);
+    showCard({ kind: 'err', icon: 'err', greet: '', name: title, pill: '', time: '', date: '', msg: msg, actions: actions || [] });
+  }
+
+  function handleFailure(res, mode) {
+    var msg = res.message || 'Beklenmeyen bir hata oluştu.';
+    switch (res.code) {
+      case 'PIN_WRONG':
+      case 'PIN_FORMAT':
+        pinError(msg);
+        break;
+      case 'LOCKED':
+        if (mode === 'pin') pinError(msg, 60);
+        else showError('Geçici Kilit', msg);
+        break;
+      case 'TOKEN_UNKNOWN':
+        store.del(KEY.token); // Geçersiz anahtar silinir; sahiplik bilgisi (pid) suistimal kontrolü için korunur
+        showError('Yetkisiz Cihaz', msg + ' Cihaz eşleşmeniz bulunamadı; yönetici sıfırlamış veya başka bir cihazla eşleşmiş olabilirsiniz.', [
+          { label: 'PIN ile Eşleştir', fn: function () { showPin(); } }
+        ]);
+        break;
+      case 'DEVICE_OTHER':
+      case 'BOUND_ELSEWHERE':
+      case 'FP_CONFLICT':
+        showError('Yetkisiz Cihaz', msg, [{ label: 'Tamam', fn: finish, secondary: true }]);
+        break;
+      case 'PASSIVE':
+        showError('Erişim Engellendi', msg);
+        break;
+      case 'INVALID_KEY':
+        showError('Geçersiz QR Kod', msg);
+        break;
+      case 'PIN_CONFLICT':
+        showError('PIN Çakışması', msg);
+        break;
+      default:
+        showError('İşlem Tamamlanamadı', msg, [
+          { label: 'Tekrar Dene', fn: mode === 'pin' ? function () { showPin(); } : autoRecord }
+        ]);
+    }
+  }
+
+  function showTransportError(err, retryFn) {
+    if (err && err.message === 'config') {
+      showError('Yapılandırma Eksik', 'Index.html içindeki API_URL değerini web uygulaması (/exec) adresinizle değiştirin.');
+      return;
+    }
+    var offline = navigator.onLine === false;
+    showError(offline ? 'İnternet Yok' : 'Bağlantı Hatası',
+      offline ? 'İnternet bağlantınızı kontrol edip tekrar deneyin.' : 'Sunucuya ulaşılamadı. Lütfen tekrar deneyin.',
+      [{ label: 'Tekrar Dene', fn: retryFn }]);
+  }
+
+  function finish() {
+    closeOrLock();
+  }
+
+  /* ---------- Olaylar ---------- */
+  $('pkLoginBtn').addEventListener('click', passkeyLogin);
+  $('pad').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('button[data-k]') : null;
+    if (b && !b.disabled) press(b.getAttribute('data-k'));
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!$('vPin').classList.contains('is-active')) return;
+    if (/^\d$/.test(e.key)) press(e.key);
+    else if (e.key === 'Backspace') press('back');
+    else if (e.key === 'Escape') press('clear');
+  });
+  // Sekme ertesi gün yeniden açılırsa eski sonucu "yeni kayıt" sanmasın
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && $('vResult').classList.contains('is-active') &&
+        state.resultAt && Date.now() - state.resultAt > 10 * 60 * 1000) {
+      setText('resMsg', 'Bu ekran eski bir kayda aittir. Yeni giriş/çıkış için QR kodu tekrar okutun.');
+    }
+  });
+
+  /* ---------- Başlat ---------- */
+  function boot() {
+    $('brandName').textContent = CONFIG.FIRMA_ADI;
+    tick();
+    setInterval(tick, 1000);
+    if (!store.get(KEY.iid)) store.set(KEY.iid, uuidv4());
+    state.fpPromise = collectFingerprint().then(null, function () { return null; }); // Arka planda hazırlanır
+    detectPasskey().then(function (ok) { state.pkSupported = ok; refreshPkButton(); });
+    getLaunchParams(function (p) {
+      state.qrKey = p.k || '';
+      if (p.bitti) { showUsed(); return; }                       // Kullanılmış bağlantı → kayıt yok
+      if (isReloadNav()) {                                      // F5 / geri tuşu → kayıt yok
+        markUsed();
+        showUsed('Sayfa yenilendiği için kayıt yapılmadı.');
+        return;
+      }
+      if (store.get(KEY.token)) autoRecord();  // Token var → tuşa basmadan otomatik kayıt
+      else showPin();                         // Token yok → PIN tuş takımı
+    });
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
